@@ -1,0 +1,37 @@
+<% if @list_students.present? %>
+<h3 class="m-2">
+  List of Students
+</h3>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Sr.no</th>
+      <th>First Name</th>
+      <th>Last Name</th>
+      <th>Email</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @list_students&.each_with_index do |student, index| %>
+    <tr>
+      <td><%= index + 1 %></td> <!-- Add the index number -->
+      <td><%= student&.first_name %></td>
+      <td><%= student&.last_name %></td>
+      <td><%= student&.email %></td>
+      <td>
+        <% if current_user.school_admin? || current_user.admin? %>
+        <%= link_to "Edit student",edit_dashboard_path({id:student}),class: "btn btn-primary mt-2 ml-2" %>
+        <%= link_to "Delete student",dashboard_path({id: student}),data: { turbo_method: :delete,turbo_confirm: "Are you sure?"},class: "btn btn-danger mt-2 ml-2" %>
+        <% end %>
+      </td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>
+<div class="display-1"></div>
+<div class="display-1"></div>
+<% end %>
+<% if current_user.school_admin? || current_user.admin? %>
+  <h6><%= link_to "New Student", new_student_dashboards_path, class: "btn btn-primary mt-2 ml-2" %></h6>
+<% end %>

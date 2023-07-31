@@ -1,0 +1,87 @@
+<% if @list_batch.present? %>
+<h3 class="m-2">
+  My batches
+  <% if current_user.student? %>
+  <small class="text-muted ">you are in</small>
+</h3>
+<% end %>
+<div class="display-1 display-line-height border border-dark"></div>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Sr.no</th>
+      <th>Batch Name</th>
+      <th>Max count</th>
+      <th>School</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @list_batch&.each_with_index do |batch, index| %>
+    <tr class="border-bottom">
+      <td><%= index + 1 %></td> <!-- Add the index number -->
+      <td><%= batch&.name %></td>
+      <td><%= batch&.max_count %></td>
+      <td><%= batch&.school&.name %></td>
+      <td>
+        <%= link_to "view", batch_path({ id: batch.id }), class: "btn btn-info" %>
+        <% if current_user.school_admin? or current_user.admin? %>
+        <%= link_to "Edit", edit_batch_path(batch), class: "btn btn-primary" %>
+        <%= link_to "Destroy", batch, data: { turbo_method: :delete, turbo_confirm: "Are you sure?" }, class: "btn btn-danger" %>
+        <% end %>
+      </td>
+    </tr>
+    <% end %>
+    <% if current_user.school_admin? or current_user.admin?%>
+    <h6 class="m-2"><%= link_to "Add New Batch", new_batch_path, class: "btn btn-primary mt-2 ml-2" %></h6>
+    <% end %>
+  </tbody>
+</table>
+<% else %>
+<h3 class="m-2">
+  Your request are 
+  <small class="text-muted ">pending for approval</small>
+</h3>
+<div class="display-1 display-line-height border border-dark"></div>
+<% end %>
+<% if @school_admin_batch.present? %>
+<h3 class="m-2">
+  list of Available batches
+</h3>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Sr.no</th>
+      <th>Batch Name</th>
+      <th>Max count</th>
+      <th>School</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @school_admin_batch&.each_with_index do |batch, index| %>
+    <tr class="border-bottom">
+      <td><%= index + 1 %></td> <!-- Add the index number -->
+      <td><%= batch&.name %></td>
+      <td><%= batch&.max_count %></td>
+      <td><%= batch&.school&.name %></td>
+      <td>
+        <%= link_to "view", batch_path({ id: batch.id }), class: "btn btn-info" %>
+        <% if current_user.student? %>
+        <%= link_to "Enroll now", add_batch_request_batches_path({ id: batch }), class: "btn btn-secondary" %>
+        <% end %>
+        <% if current_user.school_admin? or current_user.admin? %>
+        <%= link_to "Add student", add_student_batch_path({ id: batch.id }), class: "btn btn-info" %>
+
+        <%= link_to "Edit", edit_batch_path(batch), class: "btn btn-primary" %>
+        <%= link_to "Destroy", batch, data: { turbo_method: :delete, turbo_confirm: "Are you sure?" }, class: "btn btn-danger" %>
+        <% end %>
+      </td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>
+<% end %>
+<% if current_user.school_admin? or current_user.admin?%>
+  <h6 class="m-2"><%= link_to "Add New Batch", new_batch_path, class: "btn btn-primary mt-2 ml-2" %></h6>
+<% end %>

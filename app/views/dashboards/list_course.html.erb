@@ -1,0 +1,59 @@
+<% unless @list_course.present? %>
+  <h3 class="m-2">
+    No Courses are available
+</h3>
+<% end %>
+<% if @list_course.present? %>
+<h3 class="m-2">
+  List of Courses
+  <% if current_user.student? %>
+  <small class="text-muted ">you are in</small>
+</h3>
+<% end %>
+<div class="display-1 display-line-height border border-dark"></div>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Sr.no</th>
+      <th>Course name</th>
+      <th>Course description</th>
+      <th>Course tutor name</th>
+      <th>Course Fees</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+  <% @list_course&.each_with_index do |course, index| %>
+    <tr>
+      <td><%= index + 1 %></td> <!-- Add the index number -->
+      <td><%= course.name %></td> 
+      <td><%= course.description %></td> 
+      <td><%= course.tutor_name %></td> 
+      <td><%= course.fees %></td> 
+      <td>
+        <%= link_to "view", course_path({ id: course.id }), class: "btn btn-info" %>
+        <% if current_user.student? %>
+          <%= link_to "Enroll now", course_path({ id: course.id }), class: "btn btn-secondary" %>
+        <% end %>
+        <% if current_user.school_admin? or current_user.admin? %>
+          <%= link_to "Edit", edit_course_path(course), class: "btn btn-primary" %>
+          <%= link_to "Destroy", course, data: { turbo_method: :delete, turbo_confirm: "Are you sure?" }, class: "btn btn-danger" %>
+        <% end %>
+      </td>
+    </tr>
+  <% end %>
+</tbody>
+</table>
+</table>
+<% else %>
+<h3 class="m-2">
+  Your request are 
+  <small class="text-muted ">pending for approval</small>
+</h3>
+<div class="display-1 display-line-height border border-dark"></div>
+<% end %>
+<% if current_user.school_admin? or current_user.admin? %>
+<h6>
+  <%= link_to "Add New Course", new_course_path, class: "btn btn-primary mt-2 ml-2" %>
+</h6>
+<% end %>
