@@ -52,7 +52,7 @@ class CoursesController < ApplicationController
     @course.destroy
 
     respond_to do |format|
-      format.html { redirect_to dashboards_path, notice: 'Course was successfully destroyed.' }
+      format.html { redirect_to list_course_dashboards_path, notice: 'Course was successfully destroyed.' }
       format.json { success 'destroyed' }
     end
   end

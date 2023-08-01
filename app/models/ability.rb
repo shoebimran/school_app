@@ -12,7 +12,7 @@ class Ability
       can %i[show update destroy], School
       can %i[create show edit add_student destroy update], Batch
       can %i[show edit destroy create], Course
-      can %i[index approve_request list_course list_student list_school list_batch request_review new_student create_student],
+      can %i[index edit_student update_student approve_request list_course list_student list_school list_batch request_review new_student create_student],
           DashboardsController
       can :destroy, Connection
     elsif user.student?

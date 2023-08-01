@@ -8,20 +8,20 @@
 <table class="table">
   <thead>
     <tr>
-      <th scope="col">Request Id</th>
-      <th scope="col">Student Name</th>
-      <th scope="col">Batch</th>
-      <th scope="col">School</th>
-      <% if current_user.student?  or current_user.admin? %>
-      <th scope="col">Status</th>
+      <th>Sr.no</th>
+      <th>Student Name</th>
+      <th>Batch</th>
+      <th>School</th>
+      <th>Status</th>
+      <% if current_user.admin? or current_user.school_admin? %>
       <th>Action</th>
       <% end %>
     </tr>
   </thead>
   <tbody>
-    <% @request_review.each do |request| %>
+    <% @request_review.each_with_index do |request, index| %>
     <tr>
-      <th scope="row"><%= request&.id %></th> 
+      <td><%= index + 1 %></td>
       <td><%= request&.student&.first_name %></td>
       <td><%= request&.batch&.name %></td>
       <td><%= request&.school&.name %></td>
@@ -30,11 +30,13 @@
       <% else%>
       <td>Pending</td>
       <% end %>
-      <% if current_user.school_admin? or current_user.admin? %>
-      <td><%= link_to "Reject request",connection_path(request),data: { turbo_method: :delete,turbo_confirm: "Are you sure?"},class: "btn btn-danger mt-2 ml-2" %>
-        <%= link_to "Approve request",approve_request_dashboards_path({id: request}),data: { turbo_confirm: "Are you sure?"},class: "btn btn-primary mt-2 ml-2" %></td>
+      <td>
+      <% if (current_user.school_admin? or current_user.admin?) && !request&.status? %>
+        <%= link_to "Reject request",connection_path(request),data: { turbo_method: :delete,turbo_confirm: "Are you sure?"},class: "btn btn-danger mt-2 ml-2" %>
+        <%= link_to "Approve request",approve_request_dashboards_path({id: request}),data: { turbo_confirm: "Are you sure?"},class: "btn btn-primary mt-2 ml-2" %>
+        <% end %>
+        </td>
     </tr>
-    <% end %>
     <% end %>
   </tbody>
 </table>

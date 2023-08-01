@@ -1,3 +1,24 @@
+<% if current_user.student? %>
+<h3 class="m-2">
+  My profile
+</h3>
+<table class="table">
+  <thead>
+    <tr>
+      <th>First Name</th>
+      <th>Last Name</th>
+      <th>Email</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="border-bottom">
+      <td><%= @list_current_stud&.first_name %></td>
+      <td><%= @list_current_stud&.last_name %></td>
+      <td><%= @list_current_stud&.email %></td>
+    </tr>
+  </tbody>
+</table>
+<% end %>
 <% if @list_students.present? %>
 <h3 class="m-2">
   List of Students
@@ -9,7 +30,11 @@
       <th>First Name</th>
       <th>Last Name</th>
       <th>Email</th>
-      <th>Action</th>
+      <th>
+      <% if current_user.school_admin? || current_user.admin? %>
+      Action
+      <% end %>
+      </th>
     </tr>
   </thead>
   <tbody>
@@ -21,7 +46,7 @@
       <td><%= student&.email %></td>
       <td>
         <% if current_user.school_admin? || current_user.admin? %>
-        <%= link_to "Edit student",edit_dashboard_path({id:student}),class: "btn btn-primary mt-2 ml-2" %>
+        <%= link_to "Edit student",edit_student_dashboards_path({id:student}),class: "btn btn-primary mt-2 ml-2" %>
         <%= link_to "Delete student",dashboard_path({id: student}),data: { turbo_method: :delete,turbo_confirm: "Are you sure?"},class: "btn btn-danger mt-2 ml-2" %>
         <% end %>
       </td>

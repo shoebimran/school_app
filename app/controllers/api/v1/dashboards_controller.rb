@@ -9,12 +9,13 @@ module Api
       # GET /api/v1/dashboards
       def index
         if current_user.student?
-          @list_schools = current_user.schools.student_school
+          @list_schools = current_user.schools.student_school.distinct
         elsif current_user.school_admin?
           @school = current_user.own_school
         else
           @list_schools = School.all.includes(:owner)
         end
+
         render json: { list_schools: @list_schools, school: @school }
       end
 
@@ -26,7 +27,7 @@ module Api
       def create
         @school_admin = User.create(user_params)
         if @school_admin.save
-          render json: @school_admin, status: :created, location: @school_admin
+          render json: @school_admin, status: :created
         else
           render json: @school_admin.errors, status: :unprocessable_entity
         end
@@ -38,7 +39,7 @@ module Api
 
       def update
         if @school_admin.update(user_params)
-          render json: @school_admin, status: :ok, location: @school_admin
+          render json: @school_admin, status: :ok
         else
           render json: @school_admin.errors, status: :unprocessable_entity
         end
@@ -50,14 +51,13 @@ module Api
       end
 
       def add_batch_request
-        if Connection.find_or_create_by(
-          student_id: current_user&.id,
-          school_id: @course&.batch&.school&.id,
-          batch_id: @course&.batch&.id
-        )
-          render json: @course, status: :created, location: @course
+        connection = Connection.find_or_create_by(student_id: current_user&.id, school_id: @course&.batch&.school&.id,
+                                                  batch_id: @course&.batch&.id)
+
+        if connection.persisted?
+          render json: { message: 'Batch request created successfully.' }, status: :created
         else
-          render json: @course.errors, status: :unprocessable_entity
+          render json: connection.errors, status: :unprocessable_entity
         end
       end
 
@@ -69,6 +69,7 @@ module Api
                           else
                             Connection.all.includes(%i[course batch student school])
                           end
+
         render json: @request_review
       end
 
@@ -76,34 +77,40 @@ module Api
         if current_user.student?
           @list_batch = current_user.batches.student_batch
           @school_admin_batch = Batch.school_admin_batch(current_user.schools&.ids)
+          connections = Connection.where(student_id: current_user.id, batch_id: @school_admin_batch.ids)
+          @school_admin_batch = @school_admin_batch.where.not(id: @list_batch.pluck(:id) + connections.pluck(:batch_id))
         elsif current_user.school_admin?
           @school_admin_batch = Batch.school_admin_batch(current_user.own_school&.id)
         else
           @list_batch = Batch.all.includes(:school)
         end
+
         render json: { list_batch: @list_batch, school_admin_batch: @school_admin_batch }
       end
 
       def list_course
         authorize! :list_course, self
         @list_course = if current_user.student?
-                         current_user.courses.student_course
+                          course_list = current_user.batches.pluck(:id)
+                          Course.where(batch_id: course_list)
                        elsif current_user.school_admin?
                          Course.school_admin_course(current_user.own_school&.id)
                        else
-                         Course.all.includes(:batch)
+                         Course.all.includes(%i[batch])
                        end
+
         render json: @list_course
       end
 
       def list_school
         if current_user.student?
-          @list_schools = current_user.schools.student_school
+          @list_schools = current_user.schools.student_school.distinct
         elsif current_user.school_admin?
           @school = current_user.own_school
         else
           @list_schools = School.all.includes(:owner)
         end
+
         render json: { list_schools: @list_schools, school: @school }
       end
 
@@ -114,21 +121,21 @@ module Api
 
       def list_student
         if current_user.student?
+          @list_current_stud = current_user
           current_user_batches = current_user.batches.pluck(:id)
-          @list_students = User.student.joins(:batches).where(batches: { id: current_user_batches })
-                               .where.not(id: current_user.id)
-                               .distinct
+          @list_students = User.student.joins(:batches).where(batches: { id: current_user_batches }).distinct
         elsif current_user.school_admin?
-          @list_students = current_user.own_school.students.student.distinct
+          @list_students = current_user.own_school&.students&.student&.distinct
         else
           @list_students = User.where(role: 0)
         end
+
         render json: @list_students
       end
 
       def approve_request
         if @connection.update(status: true)
-          render json: @connection, status: :created, location: @connection
+          render json: { message: 'Batch request approved successfully.' }, status: :created
         else
           render json: @connection.errors, status: :unprocessable_entity
         end
@@ -141,9 +148,23 @@ module Api
 
       def create_student
         @student = User.create(user_params)
-        @connection = Connection.create(school_id: current_user&.schools&.first&.id)
+        @connection = Connection.find_or_create_by(student_id: @student.id, school_id: current_user&.own_school&.id,
+                                                   status: true)
+
         if @student.save
           render json: @student, status: :created, location: @student
+        else
+          render json: @student.errors, status: :unprocessable_entity
+        end
+      end
+
+      def edit_student
+        render json: @student
+      end
+
+      def update_student
+        if @student.update(user_params)
+          render json: @student, status: :ok, location: @student
         else
           render json: @student.errors, status: :unprocessable_entity
         end

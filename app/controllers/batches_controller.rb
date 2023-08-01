@@ -58,9 +58,14 @@ class BatchesController < ApplicationController
   end
 
   def add_batch_request
+    connections = @batch.connections.where(student_id: current_user&.id, school_id: @batch&.school&.id,
+                                           batch_id: @batch&.id)
     respond_to do |format|
-      if @batch.connections.find_or_create_by(student_id: current_user&.id, school_id: @batch&.school&.id,
-                                              batch_id: @batch&.id)
+      if connections.present?
+        format.html { redirect_to list_batch_dashboards_path, notice: 'Batch requeste was already created.' }
+        format.json { render :show, status: :success, location: @batch }
+      elsif @batch.connections.find_or_create_by(student_id: current_user&.id, school_id: @batch&.school&.id,
+                                                 batch_id: @batch&.id)
         format.html { redirect_to list_batch_dashboards_path, notice: 'Batch requeste was created successfully.' }
         format.json { render :show, status: :created, location: @batch }
       else

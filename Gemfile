@@ -81,4 +81,3 @@ group :test do
 end
 
 gem 'cancancan', '~> 3.5'
-gem 'pundit', '~> 2.3'

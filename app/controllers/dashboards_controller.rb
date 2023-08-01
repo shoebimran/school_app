@@ -2,13 +2,13 @@
 
 class DashboardsController < ApplicationController
   before_action :set_connection, only: %i[approve_request]
-  before_action :set_user, only: %i[edit update destroy]
+  before_action :set_user, only: %i[edit update destroy update_student]
   before_action :authorize_user
 
   # GET /dashboards or /dashboards.json
   def index
     if current_user.student?
-      @list_schools = current_user.schools.student_school
+      @list_schools = current_user.schools.student_school.distinct
     elsif current_user.school_admin?
       @school = current_user.own_school
     else
@@ -84,6 +84,8 @@ class DashboardsController < ApplicationController
     if current_user.student?
       @list_batch = current_user.batches.student_batch
       @school_admin_batch = Batch.school_admin_batch(current_user.schools&.ids)
+      connections = Connection.where(student_id: current_user.id, batch_id: @school_admin_batch.ids)
+      @school_admin_batch = @school_admin_batch.where.not(id: @list_batch.pluck(:id) + connections.pluck(:batch_id))
     elsif current_user.school_admin?
       @school_admin_batch = Batch.school_admin_batch(current_user.own_school&.id)
     else
@@ -92,19 +94,19 @@ class DashboardsController < ApplicationController
   end
 
   def list_course
-    authorize! :list_course, self
     @list_course = if current_user.student?
-                     current_user.courses.student_course
+                      course_list = current_user.batches.pluck(:id)
+                      Course.where(batch_id: course_list)
                    elsif current_user.school_admin?
                      Course.school_admin_course(current_user.own_school&.id)
                    else
-                     Course.all.includes(%i[batch])
+                     Course.all.includes(:batch)
                    end
   end
 
   def list_school
     if current_user.student?
-      @list_schools = current_user.schools.student_school
+      @list_schools = current_user.schools.student_school.distinct
     elsif current_user.school_admin?
       @school = current_user.own_school
     else
@@ -118,8 +120,10 @@ class DashboardsController < ApplicationController
 
   def list_student
     if current_user.student?
+      @list_current_stud = current_user
       current_user_batches = current_user.batches.pluck(:id)
       @list_students = User.student.joins(:batches).where(batches: { id: current_user_batches })
+                           .where.not(id: current_user.id)
                            .distinct
     elsif current_user.school_admin?
       @list_students = current_user.own_school&.students&.student&.distinct
@@ -146,13 +150,31 @@ class DashboardsController < ApplicationController
 
   def create_student
     @student = User.create(user_params)
-    @connection = Connection.create(student_id: @student.id, school_id: current_user&.own_school&.id, status: true)
+    @connection = Connection.find_or_create_by(student_id: @student.id, school_id: current_user&.own_school&.id,
+                                               status: true)
     respond_to do |format|
       if @student.save
         format.html { redirect_to list_student_dashboards_path, notice: 'New student successfully created.' }
         format.json { render :show, status: :created, location: @student }
       else
         format.html { render :new_student, status: :unprocessable_entity }
+        format.json { render json: @student.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  def edit_student
+    @student = User.find(params[:id])
+  end
+
+  def update_student
+    @student = User.find(params[:id])
+    respond_to do |format|
+      if @student.update(user_params)
+        format.html { redirect_to list_student_dashboards_path, notice: 'Student was successfully updated.' }
+        format.json { render :show, status: :ok, location: @student }
+      else
+        format.html { render :edit_student, status: :unprocessable_entity }
         format.json { render json: @student.errors, status: :unprocessable_entity }
       end
     end

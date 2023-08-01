@@ -26,6 +26,8 @@ Rails.application.routes.draw do
       post :add_batch_request
       get :new_student
       post :create_student
+      get :edit_student
+      match '/dashboards/:id/update_student', to: 'dashboards#update_student', via: %i[patch put], as: 'update_student'
     end
   end
 
@@ -56,6 +58,9 @@ Rails.application.routes.draw do
           post :add_batch_request
           get :new_student
           post :create_student
+          get :edit_student
+          match '/dashboards/:id/student_update', to: 'dashboards#student_update', via: %i[patch put],
+                                                  as: 'student_update'
         end
       end
     end

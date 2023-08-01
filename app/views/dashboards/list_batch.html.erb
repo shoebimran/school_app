@@ -32,9 +32,6 @@
       </td>
     </tr>
     <% end %>
-    <% if current_user.school_admin? or current_user.admin?%>
-    <h6 class="m-2"><%= link_to "Add New Batch", new_batch_path, class: "btn btn-primary mt-2 ml-2" %></h6>
-    <% end %>
   </tbody>
 </table>
 <% else %>
@@ -68,7 +65,9 @@
       <td>
         <%= link_to "view", batch_path({ id: batch.id }), class: "btn btn-info" %>
         <% if current_user.student? %>
+        <% if current_user.batches.student_batch %>
         <%= link_to "Enroll now", add_batch_request_batches_path({ id: batch }), class: "btn btn-secondary" %>
+        <% end %>
         <% end %>
         <% if current_user.school_admin? or current_user.admin? %>
         <%= link_to "Add student", add_student_batch_path({ id: batch.id }), class: "btn btn-info" %>
